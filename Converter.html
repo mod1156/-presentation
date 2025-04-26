@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>تحويل HTML إلى PowerPoint</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.11.0/pptxgen.min.js"></script>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; background: #2e8b57; color: white; border: none; border-radius: 5px; }
+        iframe { width: 90%; height: 500px; border: 2px solid #1a5632; border-radius: 10px; margin: 20px auto; }
+        h1 { color: #1a5632; }
+        .container { max-width: 1000px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>تحويل العرض التقديمي إلى PowerPoint</h1>
+        
+        <iframe id="preview" src="Mohammed.html"></iframe>
+        <br>
+        
+        <button onclick="convertToPPT()">تحويل إلى PowerPoint الآن</button>
+        <p>سيتم تحميل الملف تلقائياً بعد الانتهاء</p>
+    </div>
+    
+    <script>
+        async function convertToPPT() {
+            const btn = document.querySelector('button');
+            btn.textContent = 'جاري التحويل...';
+            btn.disabled = true;
+            
+            try {
+                const iframe = document.getElementById('preview');
+                const slides = iframe.contentDocument.querySelectorAll('.slides section');
+                const pptx = new PptxGenJS();
+                
+                // إعدادات العرض التقديمي
+                pptx.title = "التعلم عبر الهواتف الذكية";
+                pptx.author = "جامعة الملك عبدالعزيز";
+                pptx.company = "قسم الإدارة التربوية";
+                
+                // تصميم سيد للشرائح
+                pptx.defineSlideMaster({
+                    title: "MASTER_SLIDE",
+                    background: { color: "F1F8E9" },
+                    objects: [
+                        { rect: { x: 0.0, y: 6.9, w: "100%", h: 0.6, fill: { color: "1a5632" } } },
+                        { text: { text: "جامعة الملك عبدالعزيز", options: { x: 0.5, y: 6.95, w: 5, h: 0.4, fontSize: 12, color: "FFFFFF" } } }
+                    ]
+                });
+                
+                for (let i = 0; i < slides.length; i++) {
+                    const slide = slides[i];
+                    slide.style.backgroundColor = "white"; // تأكيد خلفية بيضاء
+                    
+                    const canvas = await html2canvas(slide, { 
+                        scale: 2,
+                        useCORS: true,
+                        scrollX: 0,
+                        scrollY: 0,
+                        logging: true,
+                        allowTaint: true
+                    });
+                    
+                    // إضافة الشريحة كصورة مع الحفاظ على النسبة
+                    const imgData = canvas.toDataURL('image/png');
+                    const slideObj = pptx.addSlide({ masterName: "MASTER_SLIDE" });
+                    
+                    // حساب الأبعاد للحفاظ على التناسب
+                    const imgRatio = canvas.width / canvas.height;
+                    const slideRatio = 10 / 5.625;
+                    let w, h;
+                    
+                    if (imgRatio > slideRatio) {
+                        w = 10;
+                        h = 10 / imgRatio;
+                    } else {
+                        h = 5.625;
+                        w = 5.625 * imgRatio;
+                    }
+                    
+                    slideObj.addImage({
+                        data: imgData,
+                        x: (10 - w) / 2,
+                        y: (5.625 - h) / 2,
+                        w: w,
+                        h: h
+                    });
+                }
+                
+                // حفظ الملف
+                pptx.writeFile({ fileName: 'عرض_التعلم_بالهواتف_الذكية.pptx' });
+                
+            } catch (error) {
+                console.error("حدث خطأ أثناء التحويل:", error);
+                alert("حدث خطأ أثناء التحويل، يرجى المحاولة مرة أخرى");
+            } finally {
+                btn.textContent = 'تحويل إلى PowerPoint';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
